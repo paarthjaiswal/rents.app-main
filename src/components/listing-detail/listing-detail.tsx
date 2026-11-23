@@ -40,95 +40,121 @@ export default function ListingDetailPanel({ listingId, onClose }: ListingDetail
 
     return (
         <div
-            className={`absolute top-3 right-3 bottom-3 w-[620px] bg-white rounded-xl shadow-2xl z-40 flex flex-col transition-transform duration-300 ${isOpen ? "translate-x-0" : "translate-x-[calc(100%+12px)]"}`}
+            className={`absolute top-3 right-3 bottom-3 w-[92vw] sm:w-[500px] md:w-[560px] bg-[#18181B] border border-[#27272A] text-[#FAFAFA] rounded-2xl shadow-2xl z-40 flex flex-col transition-transform duration-300 ${
+                isOpen ? "translate-x-0" : "translate-x-[calc(100%+24px)]"
+            }`}
         >
             {loading ? (
-                <div className="flex items-center justify-center flex-1">
-                    <div className="w-8 h-8 border-4 border-gray-200 border-t-[#f75c5f] rounded-full animate-spin" />
+                <div className="flex flex-col items-center justify-center flex-1 gap-3">
+                    <div className="w-8 h-8 border-3 border-[#27272A] border-t-[#8B5CF6] rounded-full animate-spin" />
+                    <span className="text-xs text-[#A1A1AA]">Loading property details...</span>
                 </div>
             ) : detail ? (
                 <>
-                    {/* Image */}
+                    {/* Image Header */}
                     <div className="relative shrink-0">
                         {images.length > 0 ? (
                             <>
                                 <img
                                     src={images[imageIndex]}
                                     alt={detail.title}
-                                    className="w-full h-64 object-cover rounded-t-xl"
+                                    className="w-full h-64 object-cover rounded-t-2xl"
                                 />
                                 {images.length > 1 && (
                                     <>
                                         <button
                                             onClick={() => setImageIndex(i => (i - 1 + images.length) % images.length)}
-                                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-7 h-7 flex items-center justify-center shadow text-gray-700 text-sm"
+                                            className="absolute left-2.5 top-1/2 -translate-y-1/2 bg-[#18181B]/80 hover:bg-[#27272A] text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md text-sm border border-[#27272A] transition-colors"
                                         >
-                                            &lt;
+                                            ‹
                                         </button>
                                         <button
                                             onClick={() => setImageIndex(i => (i + 1) % images.length)}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-7 h-7 flex items-center justify-center shadow text-gray-700 text-sm"
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-[#18181B]/80 hover:bg-[#27272A] text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md text-sm border border-[#27272A] transition-colors"
                                         >
-                                            &gt;
+                                            ›
                                         </button>
-                                        <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                                        <div className="absolute bottom-2.5 right-2.5 bg-black/75 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full border border-white/10">
                                             {imageIndex + 1}/{images.length}
                                         </div>
                                     </>
                                 )}
                             </>
                         ) : (
-                            <div className="w-full h-36 bg-gray-100 rounded-t-xl flex items-center justify-center text-gray-400 text-sm">
-                                No images
+                            <div className="w-full h-40 bg-[#111827] rounded-t-2xl flex items-center justify-center text-[#71717A] text-sm border-b border-[#27272A]">
+                                No photos available
                             </div>
                         )}
 
                         <button
                             onClick={onClose}
-                            className="absolute top-3 right-3 bg-white/90 hover:bg-white rounded-lg w-9 h-9 flex items-center justify-center shadow-md text-gray-800 text-xl font-semibold z-10 cursor-pointer"
+                            className="absolute top-3 right-3 bg-[#18181B]/80 hover:bg-[#27272A] rounded-xl w-9 h-9 flex items-center justify-center shadow-lg text-[#FAFAFA] text-lg font-semibold border border-[#27272A] z-10 cursor-pointer transition-colors"
                         >
-                            &#x2715;
+                            ✕
                         </button>
                     </div>
 
-                    {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    {/* Content Body */}
+                    <div className="flex-1 overflow-y-auto p-5 space-y-5">
                         <div>
                             <div className="flex items-start justify-between gap-3">
-                                <h2 className="text-base font-bold text-gray-900 leading-tight">{detail.title}</h2>
-                                <span className="shrink-0 text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                <h2 className="text-lg font-bold text-[#FAFAFA] leading-snug">{detail.title}</h2>
+                                <span className="shrink-0 text-xs font-semibold bg-[#8B5CF6]/15 text-[#A78BFA] border border-[#8B5CF6]/30 px-2.5 py-1 rounded-lg">
                                     {propertyTypeLabel[detail.propertyType] || detail.propertyType}
                                 </span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">{detail.address}</p>
+                            <p className="text-xs text-[#A1A1AA] mt-1.5 flex items-center gap-1">
+                                <span>📍</span>
+                                <span>{detail.address}</span>
+                            </p>
                         </div>
 
-                        <div className="text-lg font-bold text-[#f75c5f]">
-                            ₹{detail.rent.toLocaleString("en-IN")}
-                            <span className="text-sm font-normal text-gray-500">/mo</span>
+                        <div className="flex items-baseline gap-1.5 p-3 rounded-xl bg-[#111827] border border-[#27272A]">
+                            <span className="text-2xl font-extrabold text-[#A78BFA]">
+                                ₹{detail.rent.toLocaleString("en-IN")}
+                            </span>
+                            <span className="text-sm font-normal text-[#A1A1AA]">/ month</span>
                         </div>
 
                         {detail.description && (
-                            <p className="text-sm text-gray-700 leading-relaxed">{detail.description}</p>
+                            <div>
+                                <h3 className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-1.5">Overview</h3>
+                                <p className="text-sm text-[#D4D4D8] leading-relaxed bg-[#111827]/40 p-3.5 rounded-xl border border-[#27272A]/60">
+                                    {detail.description}
+                                </p>
+                            </div>
                         )}
 
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                            <h3 className="text-xs font-semibold text-gray-800 uppercase tracking-wide">Contact</h3>
-                            <div className="mt-1.5 flex items-center gap-3 text-sm text-gray-600">
-                                <span>{detail.ownerName}</span>
-                                <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded">{detail.ownerType}</span>
+                        {/* Owner / Contact Card */}
+                        <div className="p-4 bg-[#111827] border border-[#27272A] rounded-xl space-y-2.5">
+                            <h3 className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">Property Owner</h3>
+                            <div className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6] font-bold flex items-center justify-center text-xs">
+                                        {detail.ownerName ? detail.ownerName.charAt(0) : "U"}
+                                    </div>
+                                    <span className="font-medium text-[#FAFAFA]">{detail.ownerName}</span>
+                                </div>
+                                <span className="text-xs bg-[#27272A] text-[#A1A1AA] px-2 py-0.5 rounded-md font-medium">
+                                    {detail.ownerType}
+                                </span>
                             </div>
+
                             {detail.ownerPhone && (
-                                <a href={`tel:${detail.ownerPhone}`} className="mt-1.5 block text-sm text-[#f75c5f] font-medium hover:underline">
-                                    {detail.ownerPhone}
+                                <a
+                                    href={`tel:${detail.ownerPhone}`}
+                                    className="mt-2 w-full py-2 px-3 rounded-lg bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm"
+                                >
+                                    <span>📞 Call Owner:</span>
+                                    <span>{detail.ownerPhone}</span>
                                 </a>
                             )}
                         </div>
                     </div>
                 </>
             ) : isOpen ? (
-                <div className="flex items-center justify-center flex-1 text-gray-400 text-sm">
-                    Listing not found
+                <div className="flex items-center justify-center flex-1 text-[#71717A] text-sm">
+                    Listing details not found
                 </div>
             ) : null}
         </div>

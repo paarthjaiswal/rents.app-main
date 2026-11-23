@@ -2,6 +2,7 @@
 
 import { useForm, Controller } from "react-hook-form";
 import * as Slider from "@radix-ui/react-slider";
+import Link from "next/link";
 import Logo from "@/components/logo";
 import ListingCard from "@/components/listing-card/listing-card";
 import type { ListingResult } from "@/types/listing";
@@ -80,15 +81,28 @@ export default function SearchSidebar({ initialFilters, onFiltersChange, listing
     };
 
     return (
-        <div className="h-full flex flex-col bg-white">
-            <div className="px-4 py-3 border-b border-gray-100">
-                <Logo height={100} width={100} />
+        <div className="h-full flex flex-col bg-[#18181B] text-[#FAFAFA] border-r border-[#27272A] select-none">
+            {/* Header */}
+            <div className="px-4 py-3.5 border-b border-[#27272A] flex items-center justify-between bg-[#18181B]/80 backdrop-blur-sm">
+                <Link href="/" className="flex items-center gap-2 group">
+                    <Logo height={32} width={32} />
+                    <span className="text-base font-bold tracking-tight text-[#FAFAFA] group-hover:text-[#8B5CF6] transition-colors">
+                        rents<span className="text-[#8B5CF6]">.app</span>
+                    </span>
+                </Link>
+                <Link
+                    href="/"
+                    className="text-xs font-medium text-[#A1A1AA] hover:text-[#FAFAFA] px-2.5 py-1 rounded-md hover:bg-[#27272A] transition-colors"
+                >
+                    ← Home
+                </Link>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="shrink-0 overflow-y-auto p-5 space-y-6">
+            {/* Filter Form */}
+            <form onSubmit={handleSubmit(onSubmit)} className="shrink-0 overflow-y-auto p-4 space-y-5 border-b border-[#27272A]">
                 <div>
-                    <h3 className="text-sm font-semibold text-gray-800">Location</h3>
-                    <div className="mt-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">Location</h3>
+                    <div className="mt-1.5">
                         <SearchBox
                             accessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string}
                             value={initialFilters.location}
@@ -106,32 +120,52 @@ export default function SearchSidebar({ initialFilters, onFiltersChange, listing
                 </div>
 
                 <div>
-                    <h3 className="text-sm font-semibold text-gray-800">Property Type</h3>
-                    <div className="mt-2 flex flex-wrap gap-3">
-                        <label className="flex items-center space-x-2 text-sm">
-                            <input type="checkbox" {...register("pg")} className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400" />
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">Property Type</h3>
+                    <div className="mt-2 flex flex-wrap gap-2.5">
+                        <label className="flex items-center space-x-2 text-xs font-medium text-[#FAFAFA] cursor-pointer bg-[#111827] px-2.5 py-1.5 rounded-lg border border-[#27272A] hover:border-[#3F3F46]">
+                            <input
+                                type="checkbox"
+                                {...register("pg")}
+                                className="h-3.5 w-3.5 rounded border-[#27272A] bg-[#09090B] accent-[#8B5CF6] focus:ring-[#8B5CF6]"
+                            />
                             <span>PG</span>
                         </label>
-                        <label className="flex items-center space-x-2 text-sm">
-                            <input type="checkbox" {...register("flat")} className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400" />
+                        <label className="flex items-center space-x-2 text-xs font-medium text-[#FAFAFA] cursor-pointer bg-[#111827] px-2.5 py-1.5 rounded-lg border border-[#27272A] hover:border-[#3F3F46]">
+                            <input
+                                type="checkbox"
+                                {...register("flat")}
+                                className="h-3.5 w-3.5 rounded border-[#27272A] bg-[#09090B] accent-[#8B5CF6] focus:ring-[#8B5CF6]"
+                            />
                             <span>Flat</span>
                         </label>
-                        <label className="flex items-center space-x-2 text-sm">
-                            <input type="checkbox" {...register("shared")} className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400" />
-                            <span>Shared Room</span>
+                        <label className="flex items-center space-x-2 text-xs font-medium text-[#FAFAFA] cursor-pointer bg-[#111827] px-2.5 py-1.5 rounded-lg border border-[#27272A] hover:border-[#3F3F46]">
+                            <input
+                                type="checkbox"
+                                {...register("shared")}
+                                className="h-3.5 w-3.5 rounded border-[#27272A] bg-[#09090B] accent-[#8B5CF6] focus:ring-[#8B5CF6]"
+                            />
+                            <span>Shared</span>
                         </label>
                     </div>
                 </div>
 
                 <div>
-                    <h3 className="text-sm font-semibold text-gray-800">Owner Type</h3>
-                    <div className="mt-2 flex flex-wrap gap-3">
-                        <label className="flex items-center space-x-2 text-sm">
-                            <input type="checkbox" {...register("ownerOwner")} className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400" />
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">Owner Type</h3>
+                    <div className="mt-2 flex flex-wrap gap-2.5">
+                        <label className="flex items-center space-x-2 text-xs font-medium text-[#FAFAFA] cursor-pointer bg-[#111827] px-2.5 py-1.5 rounded-lg border border-[#27272A] hover:border-[#3F3F46]">
+                            <input
+                                type="checkbox"
+                                {...register("ownerOwner")}
+                                className="h-3.5 w-3.5 rounded border-[#27272A] bg-[#09090B] accent-[#8B5CF6] focus:ring-[#8B5CF6]"
+                            />
                             <span>Owner</span>
                         </label>
-                        <label className="flex items-center space-x-2 text-sm">
-                            <input type="checkbox" {...register("ownerBroker")} className="h-4 w-4 rounded border-gray-300 text-red-500 focus:ring-red-400" />
+                        <label className="flex items-center space-x-2 text-xs font-medium text-[#FAFAFA] cursor-pointer bg-[#111827] px-2.5 py-1.5 rounded-lg border border-[#27272A] hover:border-[#3F3F46]">
+                            <input
+                                type="checkbox"
+                                {...register("ownerBroker")}
+                                className="h-3.5 w-3.5 rounded border-[#27272A] bg-[#09090B] accent-[#8B5CF6] focus:ring-[#8B5CF6]"
+                            />
                             <span>Broker</span>
                         </label>
                     </div>
@@ -139,12 +173,12 @@ export default function SearchSidebar({ initialFilters, onFiltersChange, listing
 
                 <div>
                     <div className="flex justify-between items-center">
-                        <h3 className="text-sm font-semibold text-gray-800">Budget Range</h3>
-                        <span className="text-sm font-medium text-gray-900">
-                            ₹{budgetValues[0]} - ₹{budgetValues[1]}
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A1A1AA]">Budget Range</h3>
+                        <span className="text-xs font-bold text-[#A78BFA]">
+                            ₹{budgetValues[0].toLocaleString("en-IN")} - ₹{budgetValues[1].toLocaleString("en-IN")}
                         </span>
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-3">
                         <Controller
                             name="budget"
                             control={control}
@@ -157,11 +191,11 @@ export default function SearchSidebar({ initialFilters, onFiltersChange, listing
                                     max={100000}
                                     step={500}
                                 >
-                                    <Slider.Track className="bg-gray-400 relative grow rounded-full h-[3px]">
-                                        <Slider.Range className="absolute bg-[#f75c5f] rounded-full h-full" />
+                                    <Slider.Track className="bg-[#27272A] relative grow rounded-full h-[4px]">
+                                        <Slider.Range className="absolute bg-[#8B5CF6] rounded-full h-full" />
                                     </Slider.Track>
-                                    <Slider.Thumb className="border block w-5 h-5 bg-white shadow-md rounded-full hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f75c5f]" />
-                                    <Slider.Thumb className="border block w-5 h-5 bg-white shadow-md rounded-full hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f75c5f]" />
+                                    <Slider.Thumb className="block w-4 h-4 bg-[#FAFAFA] border-2 border-[#8B5CF6] shadow rounded-full focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] cursor-grab active:cursor-grabbing" />
+                                    <Slider.Thumb className="block w-4 h-4 bg-[#FAFAFA] border-2 border-[#8B5CF6] shadow rounded-full focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] cursor-grab active:cursor-grabbing" />
                                 </Slider.Root>
                             )}
                         />
@@ -170,18 +204,22 @@ export default function SearchSidebar({ initialFilters, onFiltersChange, listing
 
                 <button
                     type="submit"
-                    className="w-full py-2.5 text-sm font-medium text-white bg-[#f75c5f] rounded-lg hover:bg-[#e05558] transition-colors cursor-pointer"
+                    className="w-full py-2.5 text-xs font-bold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] rounded-xl shadow-md shadow-[#8B5CF6]/20 transition-all cursor-pointer"
                 >
-                    Update Search
+                    Apply Filters
                 </button>
             </form>
 
-            {listings.length > 0 && (
-                <div className="border-t border-gray-100 flex-1 overflow-y-auto">
-                    <div className="p-4 pb-1">
-                        <h3 className="text-sm font-semibold text-gray-800">{listings.length} Properties Found</h3>
-                    </div>
-                    <div className="px-4 pb-4 space-y-2">
+            {/* Listings Section */}
+            <div className="flex-1 overflow-y-auto">
+                <div className="p-3.5 pb-2 flex items-center justify-between sticky top-0 bg-[#18181B] z-10 border-b border-[#27272A]/50">
+                    <h3 className="text-xs font-semibold text-[#FAFAFA]">
+                        {listings.length} {listings.length === 1 ? "Property" : "Properties"} Found
+                    </h3>
+                    <span className="text-[11px] text-[#A1A1AA]">Radius 10km</span>
+                </div>
+                {listings.length > 0 ? (
+                    <div className="p-3 space-y-2.5">
                         {listings.map(listing => (
                             <ListingCard
                                 key={listing.id}
@@ -190,8 +228,14 @@ export default function SearchSidebar({ initialFilters, onFiltersChange, listing
                             />
                         ))}
                     </div>
-                </div>
-            )}
+                ) : (
+                    <div className="p-6 text-center text-[#71717A] text-xs space-y-2">
+                        <div className="text-2xl">🔍</div>
+                        <p className="font-medium text-[#A1A1AA]">No properties found here</p>
+                        <p>Try widening your rent range or searching another area.</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

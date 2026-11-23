@@ -35,7 +35,7 @@ function createTeardropImage(): ImageData {
     canvas.height = size;
     const ctx = canvas.getContext("2d")!;
 
-    // Teardrop pin shape
+    // Teardrop pin shape with violet theme
     const cx = size / 2;
     ctx.beginPath();
     ctx.moveTo(cx, size - 4);
@@ -44,13 +44,13 @@ function createTeardropImage(): ImageData {
     ctx.bezierCurveTo(size - 4, size * 0.45, cx + 4, size - 14, cx, size - 4);
     ctx.closePath();
 
-    ctx.fillStyle = "#f75c5f";
+    ctx.fillStyle = "#8B5CF6";
     ctx.fill();
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // Inner white circle
+    // Inner circle
     ctx.beginPath();
     ctx.arc(cx, size * 0.35, 6, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
@@ -90,7 +90,7 @@ export default function MapboxMap({ listings = [], flyTo, onListingClick, showVi
 
         const map = new mapboxgl.Map({
             container: mapContainer.current,
-            style: process.env.NEXT_PUBLIC_MAPBOX_STYLE,
+            style: process.env.NEXT_PUBLIC_MAPBOX_STYLE || "mapbox://styles/mapbox/dark-v11",
             center: [77.5, 20.5],
             zoom: 4,
             projection: "globe",
@@ -200,9 +200,10 @@ export default function MapboxMap({ listings = [], flyTo, onListingClick, showVi
             {showViewToggle && (
                 <button
                     onClick={toggleView}
-                    className="fixed bottom-6 right-6 bg-white rounded-md shadow-lg px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer border border-gray-200 z-50"
+                    className="fixed bottom-6 right-6 bg-[#18181B]/90 backdrop-blur-md rounded-xl shadow-2xl px-3.5 py-2 text-xs font-semibold text-[#FAFAFA] hover:bg-[#27272A] hover:text-white transition-all cursor-pointer border border-[#27272A] z-50 flex items-center gap-1.5"
                 >
-                    {view === "3D" ? "2D" : "3D"}
+                    <span className="w-2 h-2 rounded-full bg-[#8B5CF6]" />
+                    {view === "3D" ? "2D View" : "3D View"}
                 </button>
             )}
         </>

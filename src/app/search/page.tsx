@@ -75,8 +75,8 @@ function SearchContent() {
     };
 
     return (
-        <div className="flex h-screen w-screen">
-            <div className="w-[340px] shrink-0 border-r border-gray-200 shadow-lg z-10 flex flex-col">
+        <div className="flex h-screen w-screen bg-[#09090B] text-[#FAFAFA] overflow-hidden">
+            <div className="w-[360px] shrink-0 border-r border-[#27272A] bg-[#18181B] z-10 flex flex-col shadow-2xl">
                 <SearchSidebar
                     initialFilters={filters}
                     onFiltersChange={handleFiltersChange}
