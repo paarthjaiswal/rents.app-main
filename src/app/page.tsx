@@ -56,25 +56,31 @@ export default function HomePage() {
       <NavBar />
 
       <div className="relative h-screen w-screen">
-        {/* Background Dark Mapbox Map */}
+        {/* Background Dark Mapbox 3D Globe with Interactive Layer Selector */}
         <div className="absolute inset-0">
-          <MapComponent />
+          <MapComponent showLayerSelector={true} />
         </div>
 
-        {/* Ambient Dark Gradient Overlay */}
-        <div className="absolute inset-0 bg-[#09090B]/60 bg-[radial-gradient(ellipse_at_center,_rgba(9,9,11,0.65)_0%,_rgba(9,9,11,0.88)_45%,_#09090B_100%)] pointer-events-none" />
+        {/* Subtle Edge Vignettes (Keeps map bright and clearly visible while framing top navbar & bottom controls) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#09090B]/75 via-transparent to-[#09090B]/35 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(9,9,11,0.25)_100%)] pointer-events-none" />
+
+        {/* Soft Localized Backdrop strictly behind Center Hero for Crystal-Clear Text Legibility */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-[680px] h-[480px] rounded-full bg-[#09090B]/45 blur-3xl pointer-events-none" />
+        </div>
 
         {/* Hero Content */}
         <div className="relative z-10 flex flex-col justify-center items-center h-full pointer-events-none pt-12 px-4">
-          <div className="pointer-events-none mb-2 transform hover:scale-105 transition-transform duration-300">
+          <div className="pointer-events-none mb-2 transform hover:scale-105 transition-transform duration-300 drop-shadow-2xl">
             <Logo height={180} width={180} />
           </div>
 
-          <div className="text-center mb-2 pointer-events-none max-w-lg">
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#FAFAFA]">
+          <div className="text-center mb-2 pointer-events-none max-w-lg drop-shadow-md">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#FAFAFA] drop-shadow-lg">
               Find your next home with <span className="text-[#8B5CF6]">rents.app</span>
             </h1>
-            <p className="mt-2 text-sm sm:text-base text-[#A1A1AA]">
+            <p className="mt-2 text-sm sm:text-base text-[#D4D4D8] font-medium drop-shadow">
               Discover verified flats, PGs, and shared rooms on an interactive map.
             </p>
           </div>
@@ -85,7 +91,7 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center justify-center gap-3 mt-4 pointer-events-auto">
               <SearchButton
                 onClick={handleGoToMap}
-                className="flex items-center gap-2.5 cursor-pointer text-sm sm:text-base font-semibold bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl py-3 px-6 shadow-xl shadow-[#8B5CF6]/20 hover:shadow-[#8B5CF6]/30 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
+                className="flex items-center gap-2.5 cursor-pointer text-sm sm:text-base font-semibold bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl py-3 px-6 shadow-xl shadow-[#8B5CF6]/25 hover:shadow-[#8B5CF6]/35 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -106,8 +112,10 @@ export default function HomePage() {
                     d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                   />
                 </svg>
-                <span>Explore Map</span>
-                
+                <span>Go to Map</span>
+                <span className="text-xs bg-black/30 text-white/90 px-2 py-0.5 rounded-full font-medium border border-white/10">
+                  Bhilai, CG
+                </span>
               </SearchButton>
             </div>
           </div>

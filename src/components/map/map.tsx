@@ -6,14 +6,21 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 const MapboxMap = dynamic(() => import("./mapbox"), { ssr: false });
 
-interface MapComponentProps {
+export interface MapComponentProps {
     listings?: ListingResult[];
     flyTo?: { lng: number; lat: number } | null;
     onListingClick?: (listingId: string) => void;
     showViewToggle?: boolean;
+    showLayerSelector?: boolean;
 }
 
-const MapComponent = ({ listings = [], flyTo, onListingClick, showViewToggle = false }: MapComponentProps) => {
+const MapComponent = ({
+    listings = [],
+    flyTo,
+    onListingClick,
+    showViewToggle = false,
+    showLayerSelector = true,
+}: MapComponentProps) => {
     return (
         <div className="w-full h-full">
             <MapboxMap
@@ -21,9 +28,10 @@ const MapComponent = ({ listings = [], flyTo, onListingClick, showViewToggle = f
                 flyTo={flyTo}
                 onListingClick={onListingClick}
                 showViewToggle={showViewToggle}
+                showLayerSelector={showLayerSelector}
             />
         </div>
     );
-}
+};
 
 export default MapComponent;
