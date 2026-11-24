@@ -42,6 +42,7 @@ model Listing {
   rent         Int
   propertyType PropertyType
   address      String
+  amenities    String[]     @default([])
   images       String[]
   userId       String
   user         User         @relation(fields: [userId], references: [id])

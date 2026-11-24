@@ -10,6 +10,7 @@ export interface MapComponentProps {
     listings?: ListingResult[];
     flyTo?: { lng: number; lat: number } | null;
     onListingClick?: (listingId: string) => void;
+    selectedListingId?: string | null;
     showViewToggle?: boolean;
     showLayerSelector?: boolean;
 }
@@ -18,6 +19,7 @@ const MapComponent = ({
     listings = [],
     flyTo,
     onListingClick,
+    selectedListingId,
     showViewToggle = false,
     showLayerSelector = true,
 }: MapComponentProps) => {
@@ -27,6 +29,7 @@ const MapComponent = ({
                 listings={listings}
                 flyTo={flyTo}
                 onListingClick={onListingClick}
+                selectedListingId={selectedListingId}
                 showViewToggle={showViewToggle}
                 showLayerSelector={showLayerSelector}
             />

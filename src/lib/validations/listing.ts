@@ -1,14 +1,15 @@
 import { z } from "zod";
 
 export const createListingSchema = z.object({
-  title: z.string().min(3).max(200),
-  description: z.string().min(10).max(2000),
-  rent: z.number().int().positive(),
+  title: z.string().min(3, "Title must be at least 3 characters").max(200),
+  description: z.string().min(10, "Description must be at least 10 characters").max(2000),
+  rent: z.number().int().positive("Rent must be a positive number"),
   propertyType: z.enum(["PG", "FLAT", "SHARED"]),
-  address: z.string().min(5),
+  address: z.string().min(5, "Address must be at least 5 characters"),
   longitude: z.number().min(-180).max(180),
   latitude: z.number().min(-90).max(90),
-  images: z.array(z.string().url()).max(10).default([]),
+  amenities: z.array(z.string()).default([]),
+  images: z.array(z.string().min(1)).max(10).default([]),
 });
 
 export const searchListingsSchema = z.object({

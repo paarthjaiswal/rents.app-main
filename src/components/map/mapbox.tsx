@@ -11,6 +11,8 @@ mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
 const SOURCE_ID = "listings-source";
 const LAYER_ID = "listings-layer";
+const SELECTED_GLOW_LAYER_ID = "listings-selected-glow-layer";
+const SELECTED_LAYER_ID = "listings-selected-layer";
 
 export type MapStyleKey = "dark" | "streets" | "satellite" | "outdoors";
 
@@ -106,10 +108,63 @@ function createTeardropImage(): ImageData {
     return ctx.getImageData(0, 0, size, size);
 }
 
+function createSelectedTeardropImage(): ImageData {
+    const size = 56;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d")!;
+
+    const cx = size / 2;
+    const headY = size * 0.35;
+    const headRadius = cx - 5;
+
+    // 1. Soft glowing outer amber aura
+    ctx.beginPath();
+    ctx.arc(cx, headY, headRadius + 3, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(245, 158, 11, 0.4)";
+    ctx.fill();
+
+    // 2. Teardrop pin shape
+    ctx.beginPath();
+    ctx.moveTo(cx, size - 3);
+    ctx.bezierCurveTo(cx - 5, size - 16, 5, headY + 10, 5, headY);
+    ctx.arc(cx, headY, headRadius, Math.PI, 0, false);
+    ctx.bezierCurveTo(size - 5, headY + 10, cx + 5, size - 16, cx, size - 3);
+    ctx.closePath();
+
+    // 3. Vibrant amber-gold gradient
+    const grad = ctx.createLinearGradient(0, 0, 0, size);
+    grad.addColorStop(0, "#FBBF24");
+    grad.addColorStop(1, "#F59E0B");
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // 4. Crisp high-contrast white border
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 3.5;
+    ctx.stroke();
+
+    // 5. Inner white circle
+    ctx.beginPath();
+    ctx.arc(cx, headY, 7.5, 0, Math.PI * 2);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fill();
+
+    // 6. Center contrasting amber pupil
+    ctx.beginPath();
+    ctx.arc(cx, headY, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = "#D97706";
+    ctx.fill();
+
+    return ctx.getImageData(0, 0, size, size);
+}
+
 interface MapboxMapProps {
     listings?: ListingResult[];
     flyTo?: { lng: number; lat: number } | null;
     onListingClick?: (listingId: string) => void;
+    selectedListingId?: string | null;
     showViewToggle?: boolean;
     showLayerSelector?: boolean;
 }
@@ -118,6 +173,7 @@ export default function MapboxMap({
     listings = [],
     flyTo,
     onListingClick,
+    selectedListingId,
     showViewToggle = false,
     showLayerSelector = true,
 }: MapboxMapProps) {
@@ -129,6 +185,9 @@ export default function MapboxMap({
 
     const onListingClickRef = useRef(onListingClick);
     onListingClickRef.current = onListingClick;
+
+    const selectedListingIdRef = useRef(selectedListingId);
+    selectedListingIdRef.current = selectedListingId;
 
     const [view, setView] = useState<"2D" | "3D">("3D");
     const viewRef = useRef(view);
@@ -149,6 +208,12 @@ export default function MapboxMap({
                 map.addImage("teardrop-marker", imageData, { pixelRatio: 2 });
             }
 
+            // Restore selected teardrop image if removed by style change
+            if (!map.hasImage("teardrop-marker-selected")) {
+                const selectedImageData = createSelectedTeardropImage();
+                map.addImage("teardrop-marker-selected", selectedImageData, { pixelRatio: 2 });
+            }
+
             // Restore source
             const data = toGeoJSON(listingsRef.current || []);
             if (!map.getSource(SOURCE_ID)) {
@@ -160,12 +225,15 @@ export default function MapboxMap({
                 (map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource).setData(data);
             }
 
-            // Restore layer
+            const selId = selectedListingIdRef.current;
+
+            // 1. Unselected listings layer
             if (!map.getLayer(LAYER_ID)) {
                 map.addLayer({
                     id: LAYER_ID,
                     type: "symbol",
                     source: SOURCE_ID,
+                    filter: selId ? ["!=", ["get", "id"], selId] : ["all"],
                     layout: {
                         "icon-image": "teardrop-marker",
                         "icon-size": 1,
@@ -173,6 +241,49 @@ export default function MapboxMap({
                         "icon-allow-overlap": true,
                     },
                 });
+            } else {
+                map.setFilter(LAYER_ID, selId ? ["!=", ["get", "id"], selId] : ["all"]);
+            }
+
+            // 2. Selected listing ground aura/glow layer
+            if (!map.getLayer(SELECTED_GLOW_LAYER_ID)) {
+                map.addLayer({
+                    id: SELECTED_GLOW_LAYER_ID,
+                    type: "circle",
+                    source: SOURCE_ID,
+                    filter: selId ? ["==", ["get", "id"], selId] : ["==", ["get", "id"], ""],
+                    paint: {
+                        "circle-radius": 22,
+                        "circle-color": "#F59E0B",
+                        "circle-opacity": 0.25,
+                        "circle-stroke-width": 2,
+                        "circle-stroke-color": "#FBBF24",
+                        "circle-stroke-opacity": 0.6,
+                        "circle-pitch-alignment": "viewport",
+                    },
+                });
+            } else {
+                map.setFilter(SELECTED_GLOW_LAYER_ID, selId ? ["==", ["get", "id"], selId] : ["==", ["get", "id"], ""]);
+            }
+
+            // 3. Selected listing prominent marker layer (top visual priority)
+            if (!map.getLayer(SELECTED_LAYER_ID)) {
+                map.addLayer({
+                    id: SELECTED_LAYER_ID,
+                    type: "symbol",
+                    source: SOURCE_ID,
+                    filter: selId ? ["==", ["get", "id"], selId] : ["==", ["get", "id"], ""],
+                    layout: {
+                        "icon-image": "teardrop-marker-selected",
+                        "icon-size": 1.25,
+                        "icon-anchor": "bottom",
+                        "icon-allow-overlap": true,
+                        "icon-ignore-placement": true,
+                        "symbol-sort-key": 1000,
+                    },
+                });
+            } else {
+                map.setFilter(SELECTED_LAYER_ID, selId ? ["==", ["get", "id"], selId] : ["==", ["get", "id"], ""]);
             }
 
             sourceReady.current = true;
@@ -255,22 +366,30 @@ export default function MapboxMap({
             setupCustomLayers(map);
         });
 
-        // Interactive Pin Click
-        map.on("click", LAYER_ID, (e) => {
+        // Interactive Pin Click on either base or selected layer
+        const handlePinClick = (e: mapboxgl.MapLayerMouseEvent) => {
             if (!e.features?.[0]) return;
-            const props = e.features[0].properties!;
-            if (onListingClickRef.current && props.id) {
+            const props = e.features[0].properties;
+            if (onListingClickRef.current && props?.id) {
                 onListingClickRef.current(props.id as string);
             }
-        });
+        };
 
-        // Hover cursor pointer
-        map.on("mouseenter", LAYER_ID, () => {
+        map.on("click", LAYER_ID, handlePinClick);
+        map.on("click", SELECTED_LAYER_ID, handlePinClick);
+
+        // Hover cursor pointer for both layers
+        const setCursorPointer = () => {
             map.getCanvas().style.cursor = "pointer";
-        });
-        map.on("mouseleave", LAYER_ID, () => {
+        };
+        const resetCursor = () => {
             map.getCanvas().style.cursor = "";
-        });
+        };
+
+        map.on("mouseenter", LAYER_ID, setCursorPointer);
+        map.on("mouseleave", LAYER_ID, resetCursor);
+        map.on("mouseenter", SELECTED_LAYER_ID, setCursorPointer);
+        map.on("mouseleave", SELECTED_LAYER_ID, resetCursor);
 
         mapInstance.current = map;
 
@@ -290,6 +409,95 @@ export default function MapboxMap({
             source.setData(toGeoJSON(listings));
         }
     }, [listings]);
+
+    // 5. Synchronize layer filters and camera when selected listing changes
+    useEffect(() => {
+        const map = mapInstance.current;
+        if (!map) return;
+
+        // Update layer filters for selected & unselected markers
+        try {
+            if (map.getLayer(LAYER_ID)) {
+                map.setFilter(
+                    LAYER_ID,
+                    selectedListingId ? ["!=", ["get", "id"], selectedListingId] : ["all"]
+                );
+            }
+            if (map.getLayer(SELECTED_GLOW_LAYER_ID)) {
+                map.setFilter(
+                    SELECTED_GLOW_LAYER_ID,
+                    selectedListingId ? ["==", ["get", "id"], selectedListingId] : ["==", ["get", "id"], ""]
+                );
+            }
+            if (map.getLayer(SELECTED_LAYER_ID)) {
+                map.setFilter(
+                    SELECTED_LAYER_ID,
+                    selectedListingId ? ["==", ["get", "id"], selectedListingId] : ["==", ["get", "id"], ""]
+                );
+            }
+        } catch {
+            // Layers might not be loaded yet
+        }
+
+        // Camera adjustment: gently move to reveal selected marker if outside visible bounds
+        if (!selectedListingId) return;
+
+        const targetListing = listingsRef.current?.find(l => l.id === selectedListingId);
+        if (!targetListing || !map.isStyleLoaded()) return;
+
+        try {
+            const container = map.getContainer();
+            const mapWidth = container.clientWidth;
+            const mapHeight = container.clientHeight;
+
+            if (mapWidth === 0 || mapHeight === 0) return;
+
+            // Project coordinates to screen pixels within map container
+            const screenPoint = map.project([targetListing.longitude, targetListing.latitude]);
+
+            // Panel clearance width on the right (ListingDetailPanel)
+            const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+            const panelWidth = isMobile
+                ? Math.min(mapWidth * 0.92, 500)
+                : (window.innerWidth >= 768 ? 560 : 500);
+
+            // Calculate safe right padding so marker isn't hidden beneath the detail panel
+            const rightPadding = isMobile
+                ? (mapWidth > 420 ? panelWidth + 20 : 30)
+                : panelWidth + 40;
+
+            const minX = 40;
+            const maxX = mapWidth - rightPadding;
+            const minY = 40;
+            const maxY = mapHeight - 60;
+
+            // Check if marker is already visible within the unobstructed map area
+            const isVisible =
+                screenPoint.x >= minX &&
+                screenPoint.x <= maxX &&
+                screenPoint.y >= minY &&
+                screenPoint.y <= maxY;
+
+            if (!isVisible) {
+                const prefersReducedMotion =
+                    typeof window !== "undefined" &&
+                    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+                map.easeTo({
+                    center: [targetListing.longitude, targetListing.latitude],
+                    padding: {
+                        top: 60,
+                        bottom: 60,
+                        left: 40,
+                        right: rightPadding,
+                    },
+                    duration: prefersReducedMotion ? 0 : 800,
+                });
+            }
+        } catch {
+            // Ignore projection errors if map is currently animating or destroyed
+        }
+    }, [selectedListingId]);
 
     // 5. Handle flyTo coordinates
     useEffect(() => {

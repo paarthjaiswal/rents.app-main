@@ -125,6 +125,23 @@ export default function ListingDetailPanel({ listingId, onClose }: ListingDetail
                             </div>
                         )}
 
+                        {detail.amenities && detail.amenities.length > 0 && (
+                            <div>
+                                <h3 className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider mb-2">Amenities</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {detail.amenities.map(amenity => (
+                                        <span
+                                            key={amenity}
+                                            className="px-2.5 py-1 text-xs font-medium rounded-lg bg-[#8B5CF6]/10 text-[#A78BFA] border border-[#8B5CF6]/20 flex items-center gap-1.5"
+                                        >
+                                            <span className="text-[#8B5CF6] text-[10px]">✦</span>
+                                            {amenity}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Owner / Contact Card */}
                         <div className="p-4 bg-[#111827] border border-[#27272A] rounded-xl space-y-2.5">
                             <h3 className="text-xs font-semibold text-[#A1A1AA] uppercase tracking-wider">Property Owner</h3>

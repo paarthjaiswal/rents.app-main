@@ -5,6 +5,7 @@ export interface ListingDetail {
   rent: number;
   propertyType: "PG" | "FLAT" | "SHARED";
   address: string;
+  amenities?: string[];
   images: string[];
   longitude: number;
   latitude: number;

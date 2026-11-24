@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useTransition, Suspense } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Logo from "@/components/logo";
 
 type AccountType = "RENTER" | "LENDER";
 
-// UI to Backend Role Mapping for future integration:
-// RENTER -> USER
-// LENDER -> OWNER
 const ROLE_MAP = {
   RENTER: "USER",
   LENDER: "OWNER",
@@ -32,11 +30,14 @@ interface FormErrors {
   password?: string;
   confirmPassword?: string;
   agreedToTerms?: string;
+  form?: string;
 }
 
 function SignupContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialRole = searchParams.get("role")?.toLowerCase() === "lender" ? "LENDER" : "RENTER";
+  const callbackUrl = searchParams.get("callbackUrl");
 
   const [formData, setFormData] = useState<FormState>({
     fullName: "",
@@ -51,8 +52,7 @@ function SignupContent() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [submittedMessage, setSubmittedMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validate = (): boolean => {
     const errs: FormErrors = {};
@@ -97,16 +97,59 @@ function SignupContent() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmittedMessage(null);
+    setErrors({});
 
     if (!validate()) return;
 
-    startTransition(() => {
-      // Per instructions: strictly frontend-only, no backend call or session creation yet.
-      setSubmittedMessage("Signup UI is ready. Account creation will be available soon.");
-    });
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.fullName.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+          phone: formData.phone.trim() || undefined,
+          role: ROLE_MAP[formData.accountType],
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setErrors({
+          form: typeof data.error === "string" ? data.error : "Failed to create account. Please check your inputs.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Automatically sign in upon registration
+      const loginRes = await signIn("credentials", {
+        email: formData.email.trim(),
+        password: formData.password,
+        redirect: false,
+      });
+
+      if (loginRes?.error) {
+        // Fallback to login screen if auto login had issues
+        router.push("/login?registered=true");
+      } else {
+        if (callbackUrl) {
+          router.push(callbackUrl);
+        } else if (formData.accountType === "LENDER") {
+          router.push("/list-property");
+        } else {
+          router.push("/search");
+        }
+        router.refresh();
+      }
+    } catch {
+      setErrors({ form: "An unexpected error occurred. Please try again." });
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -126,7 +169,10 @@ function SignupContent() {
         </h2>
         <p className="mt-2 text-center text-sm text-[#A1A1AA]">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-[#8B5CF6] hover:text-[#A78BFA] transition-colors">
+          <Link
+            href={callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login"}
+            className="font-medium text-[#8B5CF6] hover:text-[#A78BFA] transition-colors"
+          >
             Log in here
           </Link>
         </p>
@@ -134,21 +180,17 @@ function SignupContent() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg px-4">
         <div className="bg-[#18181B] py-8 px-5 sm:px-10 shadow-2xl rounded-2xl border border-[#27272A]">
-          {/* Submission Feedback Banner */}
-          {submittedMessage && (
+          {/* Server Error Banner */}
+          {errors.form && (
             <div
               role="alert"
-              className="mb-6 p-4 rounded-xl bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] flex items-start gap-3 animate-in fade-in duration-200"
+              className="mb-6 p-4 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] flex items-start gap-3 animate-in fade-in duration-200"
             >
               <svg className="w-5 h-5 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div className="text-sm">
-                <p className="font-semibold">{submittedMessage}</p>
-                <p className="mt-1 text-xs opacity-90">
-                  Role selected: <strong>{formData.accountType}</strong> (mapped to{" "}
-                  <code>{ROLE_MAP[formData.accountType]}</code> for future backend).
-                </p>
+                <p className="font-semibold">{errors.form}</p>
               </div>
             </div>
           )}
@@ -166,7 +208,7 @@ function SignupContent() {
                   type="button"
                   onClick={() => {
                     setFormData(prev => ({ ...prev, accountType: "RENTER" }));
-                    setSubmittedMessage(null);
+                    setErrors(prev => ({ ...prev, form: undefined }));
                   }}
                   className={`relative p-4 rounded-xl text-left border cursor-pointer transition-all ${
                     formData.accountType === "RENTER"
@@ -193,7 +235,7 @@ function SignupContent() {
                   type="button"
                   onClick={() => {
                     setFormData(prev => ({ ...prev, accountType: "LENDER" }));
-                    setSubmittedMessage(null);
+                    setErrors(prev => ({ ...prev, form: undefined }));
                   }}
                   className={`relative p-4 rounded-xl text-left border cursor-pointer transition-all ${
                     formData.accountType === "LENDER"
@@ -399,9 +441,8 @@ function SignupContent() {
                   className="mt-0.5 h-4 w-4 rounded border-[#27272A] bg-[#09090B] accent-[#8B5CF6] focus:ring-[#8B5CF6]"
                 />
                 <span className="text-xs text-[#A1A1AA] leading-normal">
-                  I agree to the{" "}
-                  <span className="text-[#8B5CF6] hover:underline cursor-pointer">Terms of Service</span> and{" "}
-                  <span className="text-[#8B5CF6] hover:underline cursor-pointer">Privacy Policy</span>.
+                  I agree to the <span className="text-[#8B5CF6] hover:underline">Terms of Service</span> and{" "}
+                  <span className="text-[#8B5CF6] hover:underline">Privacy Policy</span>.
                 </span>
               </label>
               {errors.agreedToTerms && <p className="mt-1.5 text-xs text-[#EF4444]">{errors.agreedToTerms}</p>}
@@ -410,10 +451,17 @@ function SignupContent() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isPending}
-              className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/50 shadow-lg shadow-[#8B5CF6]/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
+              className="w-full py-3 px-4 rounded-xl text-sm font-semibold text-white bg-[#8B5CF6] hover:bg-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/50 shadow-lg shadow-[#8B5CF6]/20 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isPending ? "Validating..." : "Create Account"}
+              {isSubmitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Creating Account...</span>
+                </>
+              ) : (
+                "Create Account"
+              )}
             </button>
           </form>
 
@@ -423,17 +471,12 @@ function SignupContent() {
               <span className="text-xs text-[#A1A1AA]">Already have an account?</span>
             </div>
             <Link
-              href="/login"
+              href={callbackUrl ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/login"}
               className="w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-[#FAFAFA] bg-[#27272A] hover:bg-[#3F3F46] hover:text-white border border-[#3F3F46] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm group"
             >
               <span>Switch to Log In</span>
               <span className="text-[#8B5CF6] group-hover:translate-x-0.5 transition-transform">→</span>
             </Link>
-          </div>
-
-          {/* Bottom Card Footer */}
-          <div className="mt-4 text-center text-[11px] text-[#71717A]">
-            Secured by rents.app authentication frontend.
           </div>
         </div>
       </div>

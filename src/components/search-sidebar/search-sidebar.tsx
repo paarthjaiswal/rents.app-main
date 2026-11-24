@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import * as Slider from "@radix-ui/react-slider";
 import Link from "next/link";
@@ -40,9 +41,47 @@ interface SearchSidebarProps {
     onFiltersChange: (filters: SearchFilters) => void;
     listings?: ListingResult[];
     onListingClick?: (listing: ListingResult) => void;
+    selectedListingId?: string | null;
 }
 
-export default function SearchSidebar({ initialFilters, onFiltersChange, listings = [], onListingClick }: SearchSidebarProps) {
+export default function SearchSidebar({
+    initialFilters,
+    onFiltersChange,
+    listings = [],
+    onListingClick,
+    selectedListingId,
+}: SearchSidebarProps) {
+    const listContainerRef = useRef<HTMLDivElement | null>(null);
+    const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+    // Scroll selected card smoothly into view inside the sidebar without page jumping
+    useEffect(() => {
+        if (!selectedListingId) return;
+
+        const el = cardRefs.current.get(selectedListingId);
+        const container = listContainerRef.current;
+        if (!el || !container) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+
+        // Check if already comfortably visible
+        const isAlreadyVisible =
+            elRect.top >= containerRect.top + 20 &&
+            elRect.bottom <= containerRect.bottom - 20;
+
+        if (!isAlreadyVisible) {
+            const prefersReducedMotion =
+                typeof window !== "undefined" &&
+                window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            el.scrollIntoView({
+                behavior: prefersReducedMotion ? "auto" : "smooth",
+                block: "nearest",
+            });
+        }
+    }, [selectedListingId]);
+
     const { register, handleSubmit, control, watch, setValue, getValues } = useForm<FormValues>({
         defaultValues: {
             location: initialFilters.location,
@@ -238,7 +277,7 @@ export default function SearchSidebar({ initialFilters, onFiltersChange, listing
             </form>
 
             {/* Listings Section */}
-            <div className="flex-1 overflow-y-auto">
+            <div ref={listContainerRef} className="flex-1 overflow-y-auto">
                 <div className="p-3.5 pb-2 flex items-center justify-between sticky top-0 bg-[#18181B] z-10 border-b border-[#27272A]/50">
                     <h3 className="text-xs font-semibold text-[#FAFAFA]">
                         {listings.length} {listings.length === 1 ? "Property" : "Properties"} Found
@@ -248,11 +287,22 @@ export default function SearchSidebar({ initialFilters, onFiltersChange, listing
                 {listings.length > 0 ? (
                     <div className="p-3 space-y-2.5">
                         {listings.map(listing => (
-                            <ListingCard
+                            <div
                                 key={listing.id}
-                                listing={listing}
-                                onClick={(l) => onListingClick?.(l)}
-                            />
+                                ref={(el) => {
+                                    if (el) {
+                                        cardRefs.current.set(listing.id, el);
+                                    } else {
+                                        cardRefs.current.delete(listing.id);
+                                    }
+                                }}
+                            >
+                                <ListingCard
+                                    listing={listing}
+                                    isSelected={selectedListingId === listing.id}
+                                    onClick={(l) => onListingClick?.(l)}
+                                />
+                            </div>
                         ))}
                     </div>
                 ) : (

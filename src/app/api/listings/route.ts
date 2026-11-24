@@ -7,12 +7,23 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth();
 
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!["OWNER", "BROKER"].includes(session.user.role)) {
-      return NextResponse.json({ error: "Only owners and brokers can create listings" }, { status: 403 });
+    const prisma = await getPrisma();
+
+    // Verify role directly in the database for up-to-date permissions
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (!dbUser || !["OWNER", "BROKER"].includes(dbUser.role)) {
+      return NextResponse.json(
+        { error: "Only lenders (owners) and brokers can create property listings. Please switch your account to Lender in your profile." },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -25,18 +36,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, description, rent, propertyType, address, longitude, latitude, images } = parsed.data;
-    const prisma = await getPrisma();
+    const { title, description, rent, propertyType, address, longitude, latitude, amenities, images } = parsed.data;
 
     const listing = await prisma.$queryRawUnsafe<{ id: string }[]>(
-      `INSERT INTO listings ("id", "title", "description", "rent", "propertyType", "address", "location", "images", "userId", "createdAt", "updatedAt")
-       VALUES (gen_random_uuid(), $1, $2, $3, $4::"PropertyType", $5, ST_SetSRID(ST_MakePoint($6, $7), 4326)::geography, $8, $9, NOW(), NOW())
+      `INSERT INTO listings ("id", "title", "description", "rent", "propertyType", "address", "amenities", "location", "images", "userId", "createdAt", "updatedAt")
+       VALUES (gen_random_uuid(), $1, $2, $3, $4::"PropertyType", $5, $6, ST_SetSRID(ST_MakePoint($7, $8), 4326)::geography, $9, $10, NOW(), NOW())
        RETURNING "id"`,
       title,
       description,
       rent,
       propertyType,
       address,
+      amenities,
       longitude,
       latitude,
       images,
@@ -45,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ id: listing[0].id }, { status: 201 });
   } catch (e) {
-    console.error(e);
+    console.error("Create listing error:", e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

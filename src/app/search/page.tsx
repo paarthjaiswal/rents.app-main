@@ -10,10 +10,17 @@ import type { ListingResult } from "@/types/listing";
 function SearchContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const selectedParam = searchParams.get("selected");
 
     const [listings, setListings] = useState<ListingResult[]>([]);
     const [flyTo, setFlyTo] = useState<{ lng: number; lat: number } | null>(null);
-    const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+    const [selectedListingId, setSelectedListingId] = useState<string | null>(selectedParam);
+
+    useEffect(() => {
+        if (selectedParam) {
+            setSelectedListingId(selectedParam);
+        }
+    }, [selectedParam]);
 
     const filters: SearchFilters = {
         lat: Number(searchParams.get("lat")) || 0,
@@ -53,6 +60,16 @@ function SearchContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams.toString()]);
 
+    // Clear selected listing if it's no longer present in filtered listings
+    useEffect(() => {
+        if (selectedListingId) {
+            const exists = listings.some(l => l.id === selectedListingId);
+            if (!exists) {
+                setSelectedListingId(null);
+            }
+        }
+    }, [listings, selectedListingId]);
+
     const handleListingClick = (listing: ListingResult) => {
         setSelectedListingId(listing.id);
     };
@@ -82,10 +99,17 @@ function SearchContent() {
                     onFiltersChange={handleFiltersChange}
                     listings={listings}
                     onListingClick={handleListingClick}
+                    selectedListingId={selectedListingId}
                 />
             </div>
             <div className="flex-1 relative overflow-hidden">
-                <MapComponent listings={listings} flyTo={flyTo} onListingClick={handleMapPinClick} showViewToggle />
+                <MapComponent
+                    listings={listings}
+                    flyTo={flyTo}
+                    onListingClick={handleMapPinClick}
+                    selectedListingId={selectedListingId}
+                    showViewToggle
+                />
                 <ListingDetailPanel
                     listingId={selectedListingId}
                     onClose={() => setSelectedListingId(null)}
