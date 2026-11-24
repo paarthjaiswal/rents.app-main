@@ -13,6 +13,7 @@ export interface MapComponentProps {
     selectedListingId?: string | null;
     showViewToggle?: boolean;
     showLayerSelector?: boolean;
+    isSidebarOpen?: boolean;
 }
 
 const MapComponent = ({
@@ -22,6 +23,7 @@ const MapComponent = ({
     selectedListingId,
     showViewToggle = false,
     showLayerSelector = true,
+    isSidebarOpen = true,
 }: MapComponentProps) => {
     return (
         <div className="w-full h-full">
@@ -32,6 +34,7 @@ const MapComponent = ({
                 selectedListingId={selectedListingId}
                 showViewToggle={showViewToggle}
                 showLayerSelector={showLayerSelector}
+                isSidebarOpen={isSidebarOpen}
             />
         </div>
     );

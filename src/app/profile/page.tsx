@@ -711,7 +711,7 @@ function ProfileContent() {
                         {/* Action buttons */}
                         <div className="flex items-center gap-2 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-[#27272A]">
                           <Link
-                            href={`/search?selected=${item.id}`}
+                            href={`/search?listingId=${item.id}`}
                             className="flex-1 sm:flex-none py-2 px-3.5 rounded-xl text-xs font-semibold bg-[#27272A] hover:bg-[#3F3F46] text-[#FAFAFA] border border-[#3F3F46] transition-colors text-center"
                           >
                             View on Map

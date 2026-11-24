@@ -42,6 +42,7 @@ interface SearchSidebarProps {
     listings?: ListingResult[];
     onListingClick?: (listing: ListingResult) => void;
     selectedListingId?: string | null;
+    onCloseSidebar?: () => void;
 }
 
 export default function SearchSidebar({
@@ -50,6 +51,7 @@ export default function SearchSidebar({
     listings = [],
     onListingClick,
     selectedListingId,
+    onCloseSidebar,
 }: SearchSidebarProps) {
     const listContainerRef = useRef<HTMLDivElement | null>(null);
     const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -130,12 +132,22 @@ export default function SearchSidebar({
                         rents<span className="text-[#8B5CF6]">.app</span>
                     </span>
                 </Link>
-                <Link
-                    href="/"
-                    className="text-xs font-medium text-[#A1A1AA] hover:text-[#FAFAFA] px-2.5 py-1 rounded-md hover:bg-[#27272A] transition-colors"
-                >
-                    ← Home
-                </Link>
+                {onCloseSidebar && (
+                    <button
+                        type="button"
+                        onClick={onCloseSidebar}
+                        className="p-1.5 rounded-xl text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#27272A] border border-transparent hover:border-[#3F3F46] transition-all cursor-pointer flex items-center gap-1.5"
+                        aria-label="Hide filters"
+                        title="Hide filters"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <line x1="9" y1="3" x2="9" y2="21" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14 10l-2 2 2 2" />
+                        </svg>
+                        <span className="text-[11px] font-medium hidden sm:inline">Hide</span>
+                    </button>
+                )}
             </div>
 
             {/* Filter Form */}

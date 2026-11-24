@@ -167,6 +167,7 @@ interface MapboxMapProps {
     selectedListingId?: string | null;
     showViewToggle?: boolean;
     showLayerSelector?: boolean;
+    isSidebarOpen?: boolean;
 }
 
 export default function MapboxMap({
@@ -176,6 +177,7 @@ export default function MapboxMap({
     selectedListingId,
     showViewToggle = false,
     showLayerSelector = true,
+    isSidebarOpen = true,
 }: MapboxMapProps) {
     const mapContainer = useRef<HTMLDivElement | null>(null);
     const mapInstance = useRef<mapboxgl.Map | null>(null);
@@ -188,6 +190,11 @@ export default function MapboxMap({
 
     const selectedListingIdRef = useRef(selectedListingId);
     selectedListingIdRef.current = selectedListingId;
+
+    const isSidebarOpenRef = useRef(isSidebarOpen);
+    isSidebarOpenRef.current = isSidebarOpen;
+
+    const lastFocusedIdRef = useRef<string | null>(null);
 
     const [view, setView] = useState<"2D" | "3D">("3D");
     const viewRef = useRef(view);
@@ -292,6 +299,66 @@ export default function MapboxMap({
         }
     }, []);
 
+    // Focus camera on selected property with property-level zoom and clearance
+    const focusSelectedMarker = useCallback((map: mapboxgl.Map, listingId: string, force = false) => {
+        const targetListing = listingsRef.current?.find(l => l.id === listingId);
+        if (!targetListing || !map.isStyleLoaded()) return;
+
+        try {
+            const container = map.getContainer();
+            const mapWidth = container.clientWidth;
+            const mapHeight = container.clientHeight;
+            if (mapWidth === 0 || mapHeight === 0) return;
+
+            const currentZoom = map.getZoom();
+            const screenPoint = map.project([targetListing.longitude, targetListing.latitude]);
+
+            const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+            const panelWidth = isMobile
+                ? Math.min(mapWidth * 0.92, 500)
+                : (window.innerWidth >= 768 ? 560 : 500);
+
+            const rightPadding = isMobile
+                ? (mapWidth > 420 ? panelWidth + 20 : 30)
+                : panelWidth + 40;
+            const leftPadding = isSidebarOpenRef.current ? 40 : 80;
+
+            const minX = leftPadding;
+            const maxX = mapWidth - rightPadding;
+            const minY = 60;
+            const maxY = mapHeight - 60;
+
+            const needsZoom = currentZoom < 14;
+            const isVisible =
+                !needsZoom &&
+                screenPoint.x >= minX &&
+                screenPoint.x <= maxX &&
+                screenPoint.y >= minY &&
+                screenPoint.y <= maxY;
+
+            if (force || !isVisible || needsZoom || lastFocusedIdRef.current !== listingId) {
+                lastFocusedIdRef.current = listingId;
+                const prefersReducedMotion =
+                    typeof window !== "undefined" &&
+                    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+                map.easeTo({
+                    center: [targetListing.longitude, targetListing.latitude],
+                    zoom: Math.max(currentZoom, 15),
+                    padding: {
+                        top: 70,
+                        bottom: 60,
+                        left: leftPadding,
+                        right: rightPadding,
+                    },
+                    duration: prefersReducedMotion ? 0 : 1000,
+                });
+            }
+        } catch (err) {
+            console.warn("Could not ease to selected listing:", err);
+        }
+    }, []);
+
     // 1. Initial 2D/3D view preference restoration
     useEffect(() => {
         if (!showViewToggle) {
@@ -364,6 +431,10 @@ export default function MapboxMap({
 
             // Restore custom pin markers & layers
             setupCustomLayers(map);
+
+            if (selectedListingIdRef.current) {
+                focusSelectedMarker(map, selectedListingIdRef.current);
+            }
         });
 
         // Interactive Pin Click on either base or selected layer
@@ -397,9 +468,24 @@ export default function MapboxMap({
             if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
             map.remove();
         };
-    }, [setupCustomLayers]);
+    }, [setupCustomLayers, focusSelectedMarker]);
 
-    // 4. Update listings data dynamically
+    // 4. Container resize observer for smooth responsive layout and sidebar toggles
+    useEffect(() => {
+        const container = mapContainer.current;
+        if (!container) return;
+
+        const observer = new ResizeObserver(() => {
+            if (mapInstance.current) {
+                mapInstance.current.resize();
+            }
+        });
+
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, []);
+
+    // 5. Update listings data dynamically and focus selected marker if pending
     useEffect(() => {
         const map = mapInstance.current;
         if (!map) return;
@@ -408,9 +494,13 @@ export default function MapboxMap({
             const source = map.getSource(SOURCE_ID) as mapboxgl.GeoJSONSource;
             source.setData(toGeoJSON(listings));
         }
-    }, [listings]);
 
-    // 5. Synchronize layer filters and camera when selected listing changes
+        if (selectedListingId && lastFocusedIdRef.current !== selectedListingId) {
+            focusSelectedMarker(map, selectedListingId);
+        }
+    }, [listings, selectedListingId, focusSelectedMarker]);
+
+    // 6. Synchronize layer filters and camera when selected listing changes
     useEffect(() => {
         const map = mapInstance.current;
         if (!map) return;
@@ -439,65 +529,28 @@ export default function MapboxMap({
             // Layers might not be loaded yet
         }
 
-        // Camera adjustment: gently move to reveal selected marker if outside visible bounds
-        if (!selectedListingId) return;
-
-        const targetListing = listingsRef.current?.find(l => l.id === selectedListingId);
-        if (!targetListing || !map.isStyleLoaded()) return;
-
-        try {
-            const container = map.getContainer();
-            const mapWidth = container.clientWidth;
-            const mapHeight = container.clientHeight;
-
-            if (mapWidth === 0 || mapHeight === 0) return;
-
-            // Project coordinates to screen pixels within map container
-            const screenPoint = map.project([targetListing.longitude, targetListing.latitude]);
-
-            // Panel clearance width on the right (ListingDetailPanel)
-            const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-            const panelWidth = isMobile
-                ? Math.min(mapWidth * 0.92, 500)
-                : (window.innerWidth >= 768 ? 560 : 500);
-
-            // Calculate safe right padding so marker isn't hidden beneath the detail panel
-            const rightPadding = isMobile
-                ? (mapWidth > 420 ? panelWidth + 20 : 30)
-                : panelWidth + 40;
-
-            const minX = 40;
-            const maxX = mapWidth - rightPadding;
-            const minY = 40;
-            const maxY = mapHeight - 60;
-
-            // Check if marker is already visible within the unobstructed map area
-            const isVisible =
-                screenPoint.x >= minX &&
-                screenPoint.x <= maxX &&
-                screenPoint.y >= minY &&
-                screenPoint.y <= maxY;
-
-            if (!isVisible) {
-                const prefersReducedMotion =
-                    typeof window !== "undefined" &&
-                    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-                map.easeTo({
-                    center: [targetListing.longitude, targetListing.latitude],
-                    padding: {
-                        top: 60,
-                        bottom: 60,
-                        left: 40,
-                        right: rightPadding,
-                    },
-                    duration: prefersReducedMotion ? 0 : 800,
-                });
-            }
-        } catch {
-            // Ignore projection errors if map is currently animating or destroyed
+        if (!selectedListingId) {
+            lastFocusedIdRef.current = null;
+            return;
         }
-    }, [selectedListingId]);
+
+        focusSelectedMarker(map, selectedListingId);
+    }, [selectedListingId, focusSelectedMarker]);
+
+    // 7. Adjust map and camera when sidebar visibility toggles
+    useEffect(() => {
+        const map = mapInstance.current;
+        if (!map) return;
+
+        const timer = setTimeout(() => {
+            map.resize();
+            if (selectedListingIdRef.current) {
+                focusSelectedMarker(map, selectedListingIdRef.current, true);
+            }
+        }, 310);
+
+        return () => clearTimeout(timer);
+    }, [isSidebarOpen, focusSelectedMarker]);
 
     // 5. Handle flyTo coordinates
     useEffect(() => {

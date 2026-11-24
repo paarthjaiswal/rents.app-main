@@ -440,7 +440,7 @@ export default function ListPropertyPage() {
                 View in My Listings
               </Link>
               <Link
-                href={`/search?selected=${createdListingId}`}
+                href={`/search?listingId=${createdListingId}`}
                 className="w-full sm:w-auto py-2.5 px-6 rounded-xl text-sm font-semibold text-[#FAFAFA] bg-[#27272A] hover:bg-[#3F3F46] border border-[#3F3F46] transition-colors"
               >
                 View on Map
