@@ -6,6 +6,7 @@ import Link from "next/link";
 import Logo from "@/components/logo";
 import ListingCard from "@/components/listing-card/listing-card";
 import type { ListingResult } from "@/types/listing";
+import { MAPBOX_SEARCH_OPTIONS, MAPBOX_SEARCH_THEME, formatMapboxLocation } from "@/lib/mapbox-search";
 
 import dynamic from "next/dynamic";
 const SearchBox = dynamic(
@@ -42,7 +43,7 @@ interface SearchSidebarProps {
 }
 
 export default function SearchSidebar({ initialFilters, onFiltersChange, listings = [], onListingClick }: SearchSidebarProps) {
-    const { register, handleSubmit, control, watch, setValue } = useForm<FormValues>({
+    const { register, handleSubmit, control, watch, setValue, getValues } = useForm<FormValues>({
         defaultValues: {
             location: initialFilters.location,
             coords: { lat: initialFilters.lat, lng: initialFilters.lng },
@@ -106,15 +107,41 @@ export default function SearchSidebar({ initialFilters, onFiltersChange, listing
                         <SearchBox
                             accessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string}
                             value={initialFilters.location}
+                            placeholder="Search city, neighborhood, or landmark..."
+                            theme={MAPBOX_SEARCH_THEME}
+                            options={MAPBOX_SEARCH_OPTIONS}
                             onRetrieve={(result) => {
                                 const feature = result.features[0];
-                                setValue("location", feature.properties.full_address);
-                                setValue("coords", {
+                                if (!feature) return;
+                                const formattedLocation = formatMapboxLocation(feature);
+                                const coords = {
                                     lng: feature.geometry.coordinates[0],
                                     lat: feature.geometry.coordinates[1],
+                                };
+                                setValue("location", formattedLocation);
+                                setValue("coords", coords);
+
+                                // Immediately trigger filter update and map flyTo
+                                const current = getValues();
+                                const types: string[] = [];
+                                if (current.pg) types.push("PG");
+                                if (current.flat) types.push("FLAT");
+                                if (current.shared) types.push("SHARED");
+
+                                const owners: string[] = [];
+                                if (current.ownerOwner) owners.push("OWNER");
+                                if (current.ownerBroker) owners.push("BROKER");
+
+                                onFiltersChange({
+                                    location: formattedLocation,
+                                    lat: coords.lat,
+                                    lng: coords.lng,
+                                    propertyType: types,
+                                    ownerType: owners,
+                                    minRent: current.budget[0],
+                                    maxRent: current.budget[1],
                                 });
                             }}
-                            options={{ language: "en", country: "IN" }}
                         />
                     </div>
                 </div>

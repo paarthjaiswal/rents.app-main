@@ -6,6 +6,7 @@ import { useForm, Controller } from "react-hook-form";
 import * as Slider from "@radix-ui/react-slider";
 
 import { SearchModalType } from "@/types/search-modal-type";
+import { MAPBOX_SEARCH_OPTIONS, MAPBOX_SEARCH_THEME, formatMapboxLocation } from "@/lib/mapbox-search";
 
 import dynamic from "next/dynamic";
 const SearchBox = dynamic(
@@ -100,21 +101,22 @@ const SearchModal = ({ onApplyFilters }: SearchModalProps) => {
                                     <div className="mt-2">
                                         <SearchBox
                                             accessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN as string}
+                                            placeholder="Search city, neighborhood, or landmark..."
+                                            theme={MAPBOX_SEARCH_THEME}
+                                            options={MAPBOX_SEARCH_OPTIONS}
                                             onRetrieve={(result) => {
                                                 const selectedFeature = result.features[0];
-                                                setValue("location", selectedFeature.properties.full_address);
+                                                if (!selectedFeature) return;
+                                                const formattedLocation = formatMapboxLocation(selectedFeature);
+                                                setValue("location", formattedLocation);
                                                 setValue("placeDetails", {
-                                                    name: selectedFeature.properties.name,
-                                                    address: selectedFeature.properties.full_address,
+                                                    name: selectedFeature.properties.name || formattedLocation,
+                                                    address: formattedLocation,
                                                     coords: {
                                                         lng: selectedFeature.geometry.coordinates[0],
                                                         lat: selectedFeature.geometry.coordinates[1],
                                                     }
                                                 });
-                                            }}
-                                            options={{
-                                                language: "en",
-                                                country: "IN",
                                             }}
                                         />
                                     </div>

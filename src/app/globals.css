@@ -68,3 +68,37 @@ mapbox-search-box {
   --color-primary: #8b5cf6;
   --border-radius: 0.75rem;
 }
+
+mapbox-search-box input {
+  color: #fafafa !important;
+  background-color: #18181b !important;
+}
+
+mapbox-search-listbox {
+  --color-background: #18181b !important;
+  --color-background-hover: #27272a !important;
+  --color-background-active: #3f3f46 !important;
+  --color-text: #fafafa !important;
+  --color-secondary: #a1a1aa !important;
+  --color-primary: #8b5cf6 !important;
+  --border: 1px solid #27272a !important;
+  --border-radius: 0.75rem !important;
+  --box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7) !important;
+}
+
+mapbox-search-listbox .Suggestion {
+  padding: 0.65rem 0.85rem !important;
+  transition: background-color 0.15s ease !important;
+}
+
+mapbox-search-listbox .SuggestionName {
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  color: #fafafa !important;
+}
+
+mapbox-search-listbox .SuggestionDesc {
+  font-size: 0.75rem !important;
+  color: #a1a1aa !important;
+  margin-top: 0.15rem !important;
+}
